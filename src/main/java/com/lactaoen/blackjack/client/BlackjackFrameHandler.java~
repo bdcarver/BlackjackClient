@@ -7,15 +7,12 @@ import com.lactaoen.blackjack.model.wrapper.ActionWrapper;
 import com.lactaoen.blackjack.model.wrapper.BetWrapper;
 import com.lactaoen.blackjack.model.wrapper.BlackjackErrorWrapper;
 import com.lactaoen.blackjack.model.wrapper.GameInfoWrapper;
-// need to import errorcode
 
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;
 import org.springframework.messaging.simp.stomp.StompSession;
 
 import java.lang.reflect.Type;
-
-import java.util.*;
 
 /**
  * Handles all frames sent by the server, regardless of which destination
@@ -49,20 +46,7 @@ public class BlackjackFrameHandler implements StompFrameHandler {
                 return Object.class;
         }
     }
-    
-    public static int randomBet() {
-      /* get random bet amount in an increment of ten */
-      
-      Random rand = new Random();
-      
-      // gets random integer
-      int rInt = rand.nextInt();
-      
-      // multiply int by 10 to get an increment of 10
-      return rInt*10;
-      
-    }
-    
+
     @Override
     public void handleFrame(StompHeaders stompHeaders, Object o) {
         // Figure out type of payload and react accordingly
@@ -73,8 +57,7 @@ public class BlackjackFrameHandler implements StompFrameHandler {
             // After we get the playerId, you'll probably want to check if we can bet.
             // If so, you could do that here.
             // TODO Add custom implementation below for variable bet sizes.
-            //session.send("/app/bet", new BetWrapper(playerId, 100));
-            session.send("/app/bet", new BetWrapper(playerId, randomBet()));
+            session.send("/app/bet", new BetWrapper(playerId, 100));
 
         } else if (o.getClass() == BlackjackErrorWrapper.class) {
             // If it gets here, there was an error that took place. Refer to the BlackjackErrorCode
@@ -82,10 +65,6 @@ public class BlackjackFrameHandler implements StompFrameHandler {
             // if you so choose.
 
             // TODO Add custom implementation below
-          
-            // print out error message
-            BlackjackErrorCode code = o.getClass().getErrorCode();
-            System.out.println(code.getMessage());
 
         } else if (o.getClass() == GameInfoWrapper.class) {
             // If it gets here, game action is taking place, so you can either send a bet or submit
@@ -99,50 +78,9 @@ public class BlackjackFrameHandler implements StompFrameHandler {
             } else if(game.getGameStatus() == Round.HAND_IN_PROGRESS) {
 
                 // TODO Change the action being sent to be based off your current hand.
-              
-                // use method getHandValue on player of playerId
-              
-                // get list of players
-                List<Player> pList = game.getPlayers();
-                for (int i = 0; i<pList.size(); i++) {
-                  
-                  // find current player
-                  if (pList.get(i).playerId.equals(playerId)) {
-                    Player current = pList.get(i);
-                    
-                    // check how many hands
-                    int handNumber = current.hands.size();
-                    
-                    // iterate and find current hand if there are more than one
-                    if (handNumber == 1) {
-                      int value = current.hands.get(0).getHandValue();
-                    } else {
-                      for (int j = 1; j<handNumber; j++) {
-                        if (current.hands.get(i).isTurn()) {
-                          value = current.hands.get(i).getHandValue();
-                        }
-                      }
-                    }
-                  }
-                }
-                
-                // actions based on card
-                if (value<9) {
-                  ActionWrapper actionWrapper = new ActionWrapper(playerId, 0, Action.HIT);
-                } 
-                
-                else if (value == 9) {
-                  ActionWrapper actionWrapper = new ActionWrapper(playerId, 0, Action.DOUBLE);
-                }
-                
-                else {
-                  ActionWrapper actionWrapper = new ActionWrapper(playerId, 0, Action.STAND);
-                }
-                
-             
+                ActionWrapper actionWrapper = new ActionWrapper(playerId, 0, Action.STAND);
+
                 session.send("/app/action", actionWrapper);
-                
-                
             }
 
         } else {
